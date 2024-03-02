@@ -1,0 +1,21 @@
+stages:
+  - lint_test
+  - build
+  - deploy
+
+lint_test:
+  stage: lint_test
+  script:
+    - phpcs .
+    - phpunit
+
+build:
+  stage: build
+  script:
+    - docker-compose build
+
+deploy:
+  stage: deploy
+  script:
+    - docker-compose push
+    - ssh user@staging-server "docker-compose -f docker-compose.yml up -d"

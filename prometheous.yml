@@ -1,0 +1,37 @@
+Setup Prometheus:
+Download Prometheus:
+
+bash commands: 
+wget https://github.com/prometheus/prometheus/releases/download/v2.35.0/prometheus-2.35.0.linux-amd64.tar.gz
+Extract Prometheus:
+
+tar -xzf prometheus-2.35.0.linux-amd64.tar.gz
+Navigate to Prometheus directory:
+
+cd prometheus-2.35.0.linux-amd64
+Create prometheus.yml configuration file:
+
+nano prometheus.yml
+Add Prometheus configuration:
+
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'php-app'
+    static_configs:
+      - targets: ['php-app:80']
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysql:3306']
+Save and exit the text editor (Ctrl + X, then Y, then Enter).
+
+Start Prometheus:
+
+bash
+Copy code
+./prometheus --config.file=prometheus.yml
+Access Prometheus UI:
+Open a web browser and navigate to http://localhost:9090 to access the Prometheus web UI.
+
+Summary:
+These commands will set up Prometheus to monitor your PHP application and MySQL database. Make sure to replace php-app and mysql with the appropriate hostnames or IP addresses of your PHP application and MySQL database. Additionally, ensure that your PHP application exposes metrics for Prometheus to scrape, and that your firewall settings allow communication between Prometheus and the monitored targets.~
