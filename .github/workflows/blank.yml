@@ -1,7 +1,5 @@
 name: production Deploy trigger Maunal
-on:
-  never:
-    # This workflow is disabled
+
 on:
   workflow_dispatch:
     inputs:
