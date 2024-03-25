@@ -1,4 +1,4 @@
-name: Deploy trigger
+name: production Deploy trigger Maunal
 on:
   workflow_dispatch:
     inputs:
@@ -9,46 +9,57 @@ on:
         type: choice
         description: Select environment
         options:
-        - dev-agent
-        - dev-admin
+        - dev
+        - production
+        - thrive
         required: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Setup Credentials for AWS
-      run: |
-        AWS_ACCESS_KEY=""
-        AWS_SECRET_ACCESS_KEY=""
-        if [ "${{ inputs.environment }}" == "dev-agent" ]; then
-          echo "Setting up AWS Credentials for Non Prod Account"
-          export AWS_ACCESS_KEY=$(echo "${{ secrets.AWS_DEV_GITHUB_USER_ACCESS_KEY }}")
-          export AWS_SECRET_ACCESS_KEY=$(echo "${{ secrets.AWS_DEV_GITHUB_USER_SECRET_ACCESS_KEY }}")
-        elif [ "${{ inputs.environment }}" == "dev-admin" ]; then
-          echo "Setting up AWS Credentials for Prod Account"
-          export AWS_ACCESS_KEY=$(echo "${{ secrets.AWS_DEV_GITHUB_USER_ACCESS_KEY }}")
-          export AWS_SECRET_ACCESS_KEY=$(echo "${{ secrets.AWS_DEV_GITHUB_USER_SECRET_ACCESS_KEY }}")
-        fi
-        if [[ -z $AWS_ACCESS_KEY ]]; then
-          echo 'Value not set'
-        else
-          echo 'Value is set'
-        fi
-        echo "AWS_ACCESS_KEY=$AWS_ACCESS_KEY" >> $GITHUB_ENV
-        echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
-        echo "The key is ${{ env.AWS_ACCESS_KEY }}"
+      - name: Setup Credentials for AWS
+        run: |
+          AWS_ACCESS_KEY=""
+          AWS_SECRET_ACCESS_KEY=""
+          if [ "${{ inputs.environment }}" == "dev" ]; then
+            echo "Setting up AWS Credentials for Non Prod Account"
+            export AWS_ACCESS_KEY="${{ secrets.AWS_DEV_GITHUB_USER_ACCESS_KEY }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_DEV_GITHUB_USER_SECRET_ACCESS_KEY }}"
+          elif [ "${{ inputs.environment }}" == "production" ]; then
+            echo "Setting up AWS Credentials for Prod Account"
+            export AWS_ACCESS_KEY="${{ secrets.AWS_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          elif [ "${{ inputs.environment }}" == "thrive" ]; then
+            echo "Setting up AWS Credentials for Prod thrive Account"
+            export AWS_ACCESS_KEY="${{ secrets.THRIVE_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.THRIVE_SECRET_ACCESS_KEY }}"
+          fi
+          if [[ -z $AWS_ACCESS_KEY ]]; then
+            echo 'Value not set'
+          else
+            echo 'Value is set'
+          fi
+          echo "AWS_ACCESS_KEY=$AWS_ACCESS_KEY" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+          echo "The key is ${{ env.AWS_ACCESS_KEY }}"
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ env.AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Deploying Version - dist-${{ inputs.commit }}
-      if: "${{ inputs.environment == 'dev-agent'}}"
-      run: aws s3 sync s3://ezra-fe-dev-build/dev/dist-${{ inputs.commit }}/ s3://www.dev-agent-dashboard.callezra.com
+      - name: Deploying Version - dist-${{ inputs.commit }}
+        if: ${{ inputs.environment == 'dev' }}
+        run: aws s3 sync s3://ezra-fe-dev-build/dev/dist-${{ inputs.commit }}/ s3://www.dev-agent-dashboard.callezra.com
 
-    - name: Deploying Version - dist-${{ inputs.commit }}
-      if: "${{ inputs.environment == 'dev-admin'}}"
-      run: aws s3 sync s3://ezra-fe-build-version/prod/dist-${{ inputs.commit }}/ s3://dev.admin-agent-dashboard.callezra.com
+      - name: Deploying Version - dist-${{ inputs.commit }}
+        if: ${{ inputs.environment == 'production' }}
+        run: aws s3 sync s3://ezra-fe-build-version/prod/dist-${{ inputs.commit }}/ s3://www.agent-dashboard.callezra.com
+
+      - name: Deploying Version - dist-${{ inputs.commit }}
+        if: ${{ inputs.environment == 'thrive' }}
+        run: aws s3 sync s3://ezra-fe-build-version/prod/dist-${{ inputs.commit }}/ s3://thrive-prod-agent-dashboard
